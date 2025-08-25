@@ -6,92 +6,122 @@
 <title>BTC Drop</title>
 <style>
   :root{
-    --glow: #00ff9a;
-    --ring-width: 18px;
-    --intensity: .9;
+    --neon: #00ff9a;
+    --neon-soft: rgba(0,255,170,0.5);
   }
 
   body{
     margin:0;
-    background:#1a1a1a;
+    background:#1a1a1a; /* grey background works best for neon green */
     display:grid;
     place-items:center;
     min-height:100vh;
+    overflow:hidden;
+    font-family: system-ui, sans-serif;
+    color:var(--neon);
   }
 
-  .flow-wrap{
-    position:relative;
-    isolation:isolate;
-    line-height:0;
-    filter:saturate(120%);
+  /* container for drops */
+  #drops{
+    position:absolute;
+    inset:0;
+    overflow:hidden;
+    z-index:0;
+  }
+
+  .drop{
+    position:absolute;
+    border-radius:50%;
+    background: radial-gradient(circle at 30% 30%, var(--neon) 0%, rgba(0,255,170,0.4) 60%, transparent 100%);
+    box-shadow:
+      0 0 6px var(--neon),
+      0 0 12px var(--neon-soft),
+      0 0 20px var(--neon-soft);
+    opacity: var(--o, 0.8);
+    width: var(--s, 12px);
+    height: var(--s, 12px);
+    left: var(--x, 50%);
+    top: var(--y, 50%);
+    transform: rotate(var(--rot, 0deg)) scale(var(--sx, 1), var(--sy, 1));
+    transform-origin:center;
+  }
+
+  .drop.smudge{
+    background: radial-gradient(circle at 40% 40%, var(--neon) 0%, rgba(0,255,170,0.25) 70%, transparent 100%);
+    box-shadow:
+      0 0 12px var(--neon),
+      0 0 30px var(--neon-soft),
+      0 0 60px var(--neon-soft);
+    filter:blur(2px);
+    border-radius:42% 58% 55% 45% / 48% 52% 45% 55%;
   }
 
   .flow-img{
-    width:min(100%, 1100px);
-    height:auto;
+    width:min(100%, 500px);
     display:block;
-    border-radius:20px; /* change to 50% if your PNG is circular */
+    z-index:1;
+    position:relative;
   }
 
-  .flow-ring{
-    position:absolute;
-    inset:-14px;
-    border-radius:inherit;
-    pointer-events:none;
-    mix-blend-mode:screen;
-    opacity:var(--intensity);
-    -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - var(--ring-width)), #000 0);
-            mask: radial-gradient(farthest-side, transparent calc(100% - var(--ring-width)), #000 0);
-    background:
-      repeating-conic-gradient(from 0deg, transparent 0 8deg, var(--glow) 9deg 10deg),
-      radial-gradient(closest-side, var(--glow), transparent 70%);
-    filter: blur(2px) url(#liquid);
-    animation: spin 9s linear infinite, pulse 3s ease-in-out infinite;
-    box-shadow:
-      0 0 24px 8px color-mix(in oklab, var(--glow) 70%, transparent),
-      0 0 60px 20px color-mix(in oklab, var(--glow) 35%, transparent);
+  h1,p{
+    position:relative;
+    z-index:2;
+    text-align:center;
+    margin:0.5em 0 0;
+    text-shadow:0 0 10px var(--neon), 0 0 20px var(--neon);
   }
-
-  .flow-ring::after{
-    content:"";
-    position:absolute;
-    inset:-16px;
-    border-radius:inherit;
-    -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - calc(var(--ring-width) + 26px)), #000 0);
-            mask: radial-gradient(farthest-side, transparent calc(100% - calc(var(--ring-width) + 26px)), #000 0);
-    background: radial-gradient(closest-side, var(--glow), transparent 70%);
-    filter: blur(14px);
-    opacity:.55;
-    animation: spin 18s linear infinite reverse, pulse 4s ease-in-out infinite;
-  }
-
-  @keyframes spin{ to{ transform:rotate(360deg);} }
-  @keyframes pulse{ 0%,100%{ opacity:var(--intensity);} 50%{ opacity:calc(var(--intensity)*.7);} }
-
-  .flow-filter{ position:absolute; left:-9999px; top:-9999px; }
 </style>
 </head>
 <body>
 
-  <div class="flow-wrap">
-    <!-- reference your image in the same folder -->
-    <img class="flow-img" src="bitcoin-green-flow.png" alt="Glowing Bitcoin">
+  <!-- floating neon drops -->
+  <div id="drops"></div>
 
-    <div class="flow-ring"></div>
+  <!-- your coin -->
+  <img class="flow-img" src="bitcoin-green-flow.jpg" alt="Glowing Bitcoin">
 
-    <svg class="flow-filter" width="0" height="0" aria-hidden="true">
-      <filter id="liquid">
-        <feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="2" seed="5" result="noise">
-          <animate attributeName="baseFrequency" dur="8s" values="0.65;0.9;0.65" repeatCount="indefinite"/>
-        </feTurbulence>
-        <feDisplacementMap in="SourceGraphic" in2="noise" scale="8" xChannelSelector="R" yChannelSelector="G"/>
-      </filter>
-    </svg>
-  </div>
-
- <!-- Glowing text below the coin -->
+  <!-- text -->
   <h1>BTC DROP</h1>
   <p>The future is flowing in neon green ⚡</p>
 
+<script>
+const dropsEl = document.getElementById("drops");
+const dropCount = 120; // total drops
+
+for (let i = 0; i < dropCount; i++) {
+  const d = document.createElement("span");
+  d.className = "drop";
+
+  const isSmudge = Math.random() < 0.2;
+  if (isSmudge) d.classList.add("smudge");
+
+  const minSize = isSmudge ? 30 : 6;
+  const maxSize = isSmudge ? 80 : 20;
+  const size = (Math.random() * (maxSize - minSize) + minSize).toFixed(1) + "px";
+
+  const x = (Math.random() * 100).toFixed(2) + "%";
+  const y = (Math.random() * 100).toFixed(2) + "%";
+
+  const o = (isSmudge ? 0.28 + Math.random() * 0.12 : 0.6 + Math.random() * 0.4).toFixed(2);
+
+  let sx = 1, sy = 1, rot = "0deg";
+  if (isSmudge) {
+    const wide = Math.random() < 0.65;
+    sx = wide ? (1.2 + Math.random() * 0.9) : (0.8 + Math.random() * 0.4);
+    sy = wide ? (0.7 + Math.random() * 0.4) : (1.2 + Math.random() * 0.9);
+    rot = (Math.random() * 360).toFixed(1) + "deg";
+  }
+
+  d.style.setProperty("--s", size);
+  d.style.setProperty("--x", x);
+  d.style.setProperty("--y", y);
+  d.style.setProperty("--o", o);
+  d.style.setProperty("--sx", sx);
+  d.style.setProperty("--sy", sy);
+  d.style.setProperty("--rot", rot);
+
+  dropsEl.appendChild(d);
+}
+</script>
 </body>
 </html>
