@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>BTC Drop</title>
+<style>
+  :root{
+    --glow: #00ff9a;
+    --ring-width: 18px;
+    --intensity: .9;
+  }
+
+  body{
+    margin:0;
+    background:#060808;
+    display:grid;
+    place-items:center;
+    min-height:100vh;
+  }
+
+  .flow-wrap{
+    position:relative;
+    isolation:isolate;
+    line-height:0;
+    filter:saturate(120%);
+  }
+
+  .flow-img{
+    width:min(100%, 1100px);
+    height:auto;
+    display:block;
+    border-radius:20px; /* change to 50% if your PNG is circular */
+  }
+
+  .flow-ring{
+    position:absolute;
+    inset:-14px;
+    border-radius:inherit;
+    pointer-events:none;
+    mix-blend-mode:screen;
+    opacity:var(--intensity);
+    -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - var(--ring-width)), #000 0);
+            mask: radial-gradient(farthest-side, transparent calc(100% - var(--ring-width)), #000 0);
+    background:
+      repeating-conic-gradient(from 0deg, transparent 0 8deg, var(--glow) 9deg 10deg),
+      radial-gradient(closest-side, var(--glow), transparent 70%);
+    filter: blur(2px) url(#liquid);
+    animation: spin 9s linear infinite, pulse 3s ease-in-out infinite;
+    box-shadow:
+      0 0 24px 8px color-mix(in oklab, var(--glow) 70%, transparent),
+      0 0 60px 20px color-mix(in oklab, var(--glow) 35%, transparent);
+  }
+
+  .flow-ring::after{
+    content:"";
+    position:absolute;
+    inset:-16px;
+    border-radius:inherit;
+    -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - calc(var(--ring-width) + 26px)), #000 0);
+            mask: radial-gradient(farthest-side, transparent calc(100% - calc(var(--ring-width) + 26px)), #000 0);
+    background: radial-gradient(closest-side, var(--glow), transparent 70%);
+    filter: blur(14px);
+    opacity:.55;
+    animation: spin 18s linear infinite reverse, pulse 4s ease-in-out infinite;
+  }
+
+  @keyframes spin{ to{ transform:rotate(360deg);} }
+  @keyframes pulse{ 0%,100%{ opacity:var(--intensity);} 50%{ opacity:calc(var(--intensity)*.7);} }
+
+  .flow-filter{ position:absolute; left:-9999px; top:-9999px; }
+</style>
+</head>
+<body>
+
+  <div class="flow-wrap">
+    <!-- reference your image in the same folder -->
+    <img class="flow-img" src="bitcoin-green-flow.png" alt="Glowing Bitcoin">
+
+    <div class="flow-ring"></div>
+
+    <svg class="flow-filter" width="0" height="0" aria-hidden="true">
+      <filter id="liquid">
+        <feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="2" seed="5" result="noise">
+          <animate attributeName="baseFrequency" dur="8s" values="0.65;0.9;0.65" repeatCount="indefinite"/>
+        </feTurbulence>
+        <feDisplacementMap in="SourceGraphic" in2="noise" scale="8" xChannelSelector="R" yChannelSelector="G"/>
+      </filter>
+    </svg>
+  </div>
+
+</body>
+</html>
