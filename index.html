@@ -3,102 +3,53 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>HFV Green Drop – Neon Rain</title>
+<title>HFV Green Drop – Neon Rain (Canvas)</title>
 <style>
-  :root{
-    --neon:#00ff9a;
-    --neon-soft:rgba(0,255,170,.55);
-    --bg:#0f1112; /* dark grey that makes neon pop */
+  body {
+    margin: 0;
+    background: #0f1112; /* dark grey background fits neon */
+    display: grid;
+    place-items: center;
+    height: 100vh;
+    overflow: hidden;
+    font-family: system-ui, sans-serif;
+    color: #00ff9a;
   }
 
-  html,body{height:100%}
-  body{
-    margin:0;
-    background:var(--bg);
-    display:grid;
-    place-items:center;
-    overflow:hidden; /* keep particles inside */
-    font-family:system-ui, Inter, Arial, sans-serif;
-    color:var(--neon);
+  canvas {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0; /* behind content */
   }
 
-  /* RAIN LAYER (on top of background, behind content) */
-  #drops{
-    position:fixed;
-    inset:0;
-    z-index:0;
-    pointer-events:none;
+  .center {
+    position: relative;
+    z-index: 1; /* above the canvas */
+    text-align: center;
   }
 
-  .center{
-    position:relative;
-    z-index:1; /* content above rain */
-    text-align:center;
-  }
-  .flow-img{
-    width:min(90vw,520px);
-    display:block;
-    margin:auto;
-    border-radius:20px;
-    filter:saturate(115%);
-  }
-  h1,p{ margin:.6rem 0 0; text-shadow:0 0 10px var(--neon), 0 0 22px var(--neon); }
-  p{ color:#bfffe6 }
-
-  /* ===== PARTICLES =====
-     Outer .drop handles fall; inner .n handles pulse.
-     No blend-modes (can hide things on some GPUs). */
-  .drop{
-    position:absolute;
-    left:var(--x,50vw);
-    top:-14vh; /* start slightly above the screen */
-    width:var(--s,12px);
-    height:var(--s,12px);
-    filter:blur(var(--b,0));
-    animation:fall var(--dur,2.2s) linear var(--delay,0s) infinite;
-    will-change:transform,filter,opacity;
-  }
-  .drop>.n{
-    width:100%; height:100%;
-    border-radius:50%;
-    background:radial-gradient(circle at 35% 35%, var(--neon) 0%, rgba(0,255,170,.35) 60%, transparent 100%);
-    box-shadow:
-      0 0 6px var(--neon),
-      0 0 14px var(--neon-soft),
-      0 0 28px var(--neon-soft);
-    opacity:var(--o,.95);
-    transform:rotate(var(--rot,0deg)) scale(var(--sx,1),var(--sy,1));
-    transform-origin:center;
-    animation:pulse var(--pdur,1s) ease-in-out var(--pdelay,0s) infinite alternate;
-  }
-  .drop.smudge>.n{
-    filter:blur(2px);
-    background:radial-gradient(circle at 40% 40%, var(--neon) 0%, rgba(0,255,170,.25) 75%, transparent 100%);
-    border-radius:42% 58% 55% 45% / 48% 52% 45% 55%;
-    box-shadow:
-      0 0 12px var(--neon),
-      0 0 34px var(--neon-soft),
-      0 0 64px var(--neon-soft);
+  .flow-img {
+    width: min(90vw, 520px);
+    display: block;
+    margin: auto;
+    border-radius: 20px;
   }
 
-  /* GUARANTEED FULL HEIGHT */
-  @keyframes fall{
-    from{ transform:translateY(-14vh); }
-    to { transform:translateY(114vh); }
+  h1, p {
+    margin: .6rem 0 0;
+    text-shadow: 0 0 10px #00ff9a, 0 0 22px #00ff9a;
   }
-
-  @keyframes pulse{
-    0% { transform:rotate(var(--rot,0deg)) scale(calc(var(--sx,1)*.85), calc(var(--sy,1)*.85)); opacity:.75; }
-    100%{ transform:rotate(var(--rot,0deg)) scale(calc(var(--sx,1)*1.15), calc(var(--sy,1)*1.15)); opacity:1; }
-  }
+  p { color: #bfffe6; }
 </style>
 </head>
 <body>
+  <!-- Canvas for neon rain -->
+  <canvas id="rain"></canvas>
 
-  <!-- Neon rain (behind content) -->
-  <div id="drops" aria-hidden="true"></div>
-
-  <!-- Your image + caption (kept) -->
+  <!-- Your image + caption -->
   <div class="center">
     <img class="flow-img" src="hfv-green-flow.png" alt="Glowing HFV">
     <h1>BTC DROP</h1>
@@ -106,69 +57,57 @@
   </div>
 
 <script>
-/* Make sure it runs after DOM is ready */
-(function () {
-  const dropsEl = document.getElementById('drops');
-  if (!dropsEl) return;
+const canvas = document.getElementById('rain');
+const ctx = canvas.getContext('2d');
+let w, h;
 
-  const COUNT = 200; // more = denser
-  for (let i = 0; i < COUNT; i++) {
-    const wrap = document.createElement('span'); // outer (fall)
-    const inner = document.createElement('span'); // inner (pulse)
-    wrap.className = 'drop';
-    inner.className = 'n';
+function resize() {
+  w = canvas.width = window.innerWidth;
+  h = canvas.height = window.innerHeight;
+}
+resize();
+window.addEventListener('resize', resize);
 
-    const isSmudge = Math.random() < 0.22;
-    if (isSmudge) wrap.classList.add('smudge');
-
-    // X position
-    wrap.style.setProperty('--x', (Math.random()*100).toFixed(2) + 'vw');
-
-    // Size
-    const min = isSmudge ? 26 : 5;
-    const max = isSmudge ? 70 : 16;
-    wrap.style.setProperty('--s', (min + Math.random()*(max-min)).toFixed(1) + 'px');
-
-    // Opacity
-    const o = (isSmudge ? 0.35 + Math.random()*0.2 : 0.7 + Math.random()*0.25).toFixed(2);
-    inner.style.setProperty('--o', o);
-
-    // Shape/rotation
-    let sx = 1, sy = 1, rot = 0;
-    if (isSmudge) {
-      const wide = Math.random() < 0.6;
-      sx = wide ? 1.2 + Math.random()*0.8 : 0.8 + Math.random()*0.4;
-      sy = wide ? 0.7 + Math.random()*0.4 : 1.2 + Math.random()*0.8;
-      rot = (Math.random()*360).toFixed(1);
-    }
-    inner.style.setProperty('--sx', sx);
-    inner.style.setProperty('--sy', sy);
-    inner.style.setProperty('--rot', rot + 'deg');
-
-    // Depth blur
-    wrap.style.setProperty('--b', (Math.random()*1.2).toFixed(2) + 'px');
-
-    // FAST fall (1.1–2.2s) + negative delay to seed mid-air
-    const dur = (1.1 + Math.random()*1.1).toFixed(2) + 's';
-    const delay = (-Math.random()*2.2).toFixed(2) + 's';
-    wrap.style.setProperty('--dur', dur);
-    wrap.style.setProperty('--delay', delay);
-
-    // Pulse timings
-    inner.style.setProperty('--pdur', (0.8 + Math.random()*0.8).toFixed(2) + 's');
-    inner.style.setProperty('--pdelay', (Math.random()*0.8).toFixed(2) + 's');
-
-    wrap.appendChild(inner);
-    dropsEl.appendChild(wrap);
-
-    // Randomize X after each fall so streams keep changing
-    wrap.addEventListener('animationiteration', (e) => {
-      if (e.animationName === 'fall') {
-        wrap.style.setProperty('--x', (Math.random()*100).toFixed(2) + 'vw');
-      }
-    });
+// Raindrop particle class
+class Drop {
+  constructor() {
+    this.reset();
   }
-})();
+  reset() {
+    this.x = Math.random() * w;
+    this.y = Math.random() * -h; // start above
+    this.size = Math.random() * 3 + 2; // radius
+    this.speed = Math.random() * 4 + 2; // fall speed
+    this.alpha = Math.random() * 0.5 + 0.5;
+    this.pulse = Math.random() * Math.PI * 2;
+  }
+  update() {
+    this.y += this.speed;
+    this.pulse += 0.1;
+    if (this.y > h) this.reset();
+  }
+  draw(ctx) {
+    const glow = Math.sin(this.pulse) * 0.3 + 0.7; // pulsate
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.size, 0, Math.PI*2);
+    ctx.fillStyle = `rgba(0,255,154,${this.alpha * glow})`;
+    ctx.shadowColor = "#00ff9a";
+    ctx.shadowBlur = 20;
+    ctx.fill();
+  }
+}
+
+const drops = Array.from({length: 200}, () => new Drop());
+
+function animate() {
+  ctx.clearRect(0, 0, w, h);
+  for (let d of drops) {
+    d.update();
+    d.draw(ctx);
+  }
+  requestAnimationFrame(animate);
+}
+animate();
 </script>
 </body>
 </html>
