@@ -6,9 +6,9 @@
 <title>HFV Green Drop – Neon Rain</title>
 <style>
   :root{
-    --neon: #00ff9a;
-    --neon-soft: rgba(0,255,170,.55);
-    --bg: #1a1a1a; /* dark grey fits neon best */
+    --neon:#00ff9a;
+    --neon-soft:rgba(0,255,170,.55);
+    --bg:#0f1112; /* dark grey that makes neon pop */
   }
 
   html,body{height:100%}
@@ -17,55 +17,63 @@
     background:var(--bg);
     display:grid;
     place-items:center;
-    overflow:hidden; /* keep particles inside the viewport */
-    isolation:isolate; /* ensures effects don’t blend with outside context */
+    overflow:hidden; /* keep particles inside */
     font-family:system-ui, Inter, Arial, sans-serif;
     color:var(--neon);
   }
 
-  /* rain layer behind the image/text */
+  /* RAIN LAYER (on top of background, behind content) */
   #drops{
-    position:fixed; inset:0; z-index:0; pointer-events:none;
+    position:fixed;
+    inset:0;
+    z-index:0;
+    pointer-events:none;
   }
 
-  .center{ position:relative; z-index:1; text-align:center; }
-  .flow-img{ width:min(90vw, 520px); display:block; margin:auto; border-radius:20px; }
-
+  .center{
+    position:relative;
+    z-index:1; /* content above rain */
+    text-align:center;
+  }
+  .flow-img{
+    width:min(90vw,520px);
+    display:block;
+    margin:auto;
+    border-radius:20px;
+    filter:saturate(115%);
+  }
   h1,p{ margin:.6rem 0 0; text-shadow:0 0 10px var(--neon), 0 0 22px var(--neon); }
   p{ color:#bfffe6 }
 
-  /* ===== Particles =====
-     Split into two elements so animations don't fight:
-     .drop falls (translateY), .n pulses (scale/opacity). */
+  /* ===== PARTICLES =====
+     Outer .drop handles fall; inner .n handles pulse.
+     No blend-modes (can hide things on some GPUs). */
   .drop{
     position:absolute;
     left:var(--x,50vw);
-    top:-12vh; /* start a little above the top */
+    top:-14vh; /* start slightly above the screen */
     width:var(--s,12px);
     height:var(--s,12px);
     filter:blur(var(--b,0));
-    animation: fall var(--dur,3s) linear var(--delay,0s) infinite;
-    will-change: transform, filter, opacity;
+    animation:fall var(--dur,2.2s) linear var(--delay,0s) infinite;
+    will-change:transform,filter,opacity;
   }
-
-  .drop > .n{
+  .drop>.n{
     width:100%; height:100%;
     border-radius:50%;
-    background: radial-gradient(circle at 35% 35%, var(--neon) 0%, rgba(0,255,170,.35) 60%, transparent 100%);
+    background:radial-gradient(circle at 35% 35%, var(--neon) 0%, rgba(0,255,170,.35) 60%, transparent 100%);
     box-shadow:
       0 0 6px var(--neon),
       0 0 14px var(--neon-soft),
       0 0 28px var(--neon-soft);
-    opacity: var(--o,.9);
-    transform: rotate(var(--rot,0deg)) scale(var(--sx,1), var(--sy,1));
+    opacity:var(--o,.95);
+    transform:rotate(var(--rot,0deg)) scale(var(--sx,1),var(--sy,1));
     transform-origin:center;
-    animation: pulse var(--pdur,1.3s) ease-in-out var(--pdelay,0s) infinite alternate;
+    animation:pulse var(--pdur,1s) ease-in-out var(--pdelay,0s) infinite alternate;
   }
-
-  /* Smudgy liquid variant */
-  .drop.smudge > .n{
-    filter: blur(2px);
-    background: radial-gradient(circle at 40% 40%, var(--neon) 0%, rgba(0,255,170,.25) 75%, transparent 100%);
+  .drop.smudge>.n{
+    filter:blur(2px);
+    background:radial-gradient(circle at 40% 40%, var(--neon) 0%, rgba(0,255,170,.25) 75%, transparent 100%);
     border-radius:42% 58% 55% 45% / 48% 52% 45% 55%;
     box-shadow:
       0 0 12px var(--neon),
@@ -73,22 +81,21 @@
       0 0 64px var(--neon-soft);
   }
 
-  /* Full-height fall (guaranteed to pass through the screen) */
+  /* GUARANTEED FULL HEIGHT */
   @keyframes fall{
-    from { transform: translateY(-12vh); }
-    to { transform: translateY(112vh); }
+    from{ transform:translateY(-14vh); }
+    to { transform:translateY(114vh); }
   }
 
-  /* Breathing/pulse */
   @keyframes pulse{
-    0% { transform: rotate(var(--rot,0deg)) scale(calc(var(--sx,1)*0.85), calc(var(--sy,1)*0.85)); opacity: calc(var(--o,.9)*0.8); }
-    100% { transform: rotate(var(--rot,0deg)) scale(calc(var(--sx,1)*1.15), calc(var(--sy,1)*1.15)); opacity: var(--o,.98); }
+    0% { transform:rotate(var(--rot,0deg)) scale(calc(var(--sx,1)*.85), calc(var(--sy,1)*.85)); opacity:.75; }
+    100%{ transform:rotate(var(--rot,0deg)) scale(calc(var(--sx,1)*1.15), calc(var(--sy,1)*1.15)); opacity:1; }
   }
 </style>
 </head>
 <body>
 
-  <!-- Neon rain -->
+  <!-- Neon rain (behind content) -->
   <div id="drops" aria-hidden="true"></div>
 
   <!-- Your image + caption (kept) -->
@@ -99,66 +106,69 @@
   </div>
 
 <script>
-/* Falling neon particles with pulse — robust across browsers */
-const dropsEl = document.getElementById('drops');
-const COUNT = 160; // density
+/* Make sure it runs after DOM is ready */
+(function () {
+  const dropsEl = document.getElementById('drops');
+  if (!dropsEl) return;
 
-for (let i = 0; i < COUNT; i++) {
-  const wrap = document.createElement('span'); // outer (fall)
-  const inner = document.createElement('span'); // inner (pulse)
-  wrap.className = 'drop';
-  inner.className = 'n';
+  const COUNT = 200; // more = denser
+  for (let i = 0; i < COUNT; i++) {
+    const wrap = document.createElement('span'); // outer (fall)
+    const inner = document.createElement('span'); // inner (pulse)
+    wrap.className = 'drop';
+    inner.className = 'n';
 
-  const isSmudge = Math.random() < 0.22;
-  if (isSmudge) wrap.classList.add('smudge');
+    const isSmudge = Math.random() < 0.22;
+    if (isSmudge) wrap.classList.add('smudge');
 
-  // Horizontal start
-  wrap.style.setProperty('--x', (Math.random()*100).toFixed(2) + 'vw');
+    // X position
+    wrap.style.setProperty('--x', (Math.random()*100).toFixed(2) + 'vw');
 
-  // Size
-  const min = isSmudge ? 26 : 5;
-  const max = isSmudge ? 70 : 16;
-  wrap.style.setProperty('--s', (min + Math.random()*(max-min)).toFixed(1) + 'px');
+    // Size
+    const min = isSmudge ? 26 : 5;
+    const max = isSmudge ? 70 : 16;
+    wrap.style.setProperty('--s', (min + Math.random()*(max-min)).toFixed(1) + 'px');
 
-  // Opacity
-  const o = (isSmudge ? 0.30 + Math.random()*0.18 : 0.65 + Math.random()*0.3).toFixed(2);
-  inner.style.setProperty('--o', o);
+    // Opacity
+    const o = (isSmudge ? 0.35 + Math.random()*0.2 : 0.7 + Math.random()*0.25).toFixed(2);
+    inner.style.setProperty('--o', o);
 
-  // Pulse scale + rotation
-  let sx = 1, sy = 1, rot = 0;
-  if (isSmudge) {
-    const wide = Math.random() < 0.6;
-    sx = wide ? 1.2 + Math.random()*0.8 : 0.8 + Math.random()*0.4;
-    sy = wide ? 0.7 + Math.random()*0.4 : 1.2 + Math.random()*0.8;
-    rot = (Math.random()*360).toFixed(1);
-  }
-  inner.style.setProperty('--sx', sx);
-  inner.style.setProperty('--sy', sy);
-  inner.style.setProperty('--rot', rot + 'deg');
-
-  // Depth blur
-  wrap.style.setProperty('--b', (Math.random()*1.4).toFixed(2) + 'px');
-
-  // Faster fall (1.6–3.4s) + negative delay so many start mid-air
-  const dur = (1.6 + Math.random()*1.8).toFixed(2) + 's';
-  const delay = (-Math.random()*3.4).toFixed(2) + 's';
-  wrap.style.setProperty('--dur', dur);
-  wrap.style.setProperty('--delay', delay);
-
-  // Pulse timings
-  inner.style.setProperty('--pdur', (1.0 + Math.random()*1.2).toFixed(2) + 's');
-  inner.style.setProperty('--pdelay', (Math.random()*1.0).toFixed(2) + 's');
-
-  wrap.appendChild(inner);
-  dropsEl.appendChild(wrap);
-
-  // After each fall, randomize X so streams don't look repetitive
-  wrap.addEventListener('animationiteration', (e) => {
-    if (e.animationName === 'fall') {
-      wrap.style.setProperty('--x', (Math.random()*100).toFixed(2) + 'vw');
+    // Shape/rotation
+    let sx = 1, sy = 1, rot = 0;
+    if (isSmudge) {
+      const wide = Math.random() < 0.6;
+      sx = wide ? 1.2 + Math.random()*0.8 : 0.8 + Math.random()*0.4;
+      sy = wide ? 0.7 + Math.random()*0.4 : 1.2 + Math.random()*0.8;
+      rot = (Math.random()*360).toFixed(1);
     }
-  });
-}
+    inner.style.setProperty('--sx', sx);
+    inner.style.setProperty('--sy', sy);
+    inner.style.setProperty('--rot', rot + 'deg');
+
+    // Depth blur
+    wrap.style.setProperty('--b', (Math.random()*1.2).toFixed(2) + 'px');
+
+    // FAST fall (1.1–2.2s) + negative delay to seed mid-air
+    const dur = (1.1 + Math.random()*1.1).toFixed(2) + 's';
+    const delay = (-Math.random()*2.2).toFixed(2) + 's';
+    wrap.style.setProperty('--dur', dur);
+    wrap.style.setProperty('--delay', delay);
+
+    // Pulse timings
+    inner.style.setProperty('--pdur', (0.8 + Math.random()*0.8).toFixed(2) + 's');
+    inner.style.setProperty('--pdelay', (Math.random()*0.8).toFixed(2) + 's');
+
+    wrap.appendChild(inner);
+    dropsEl.appendChild(wrap);
+
+    // Randomize X after each fall so streams keep changing
+    wrap.addEventListener('animationiteration', (e) => {
+      if (e.animationName === 'fall') {
+        wrap.style.setProperty('--x', (Math.random()*100).toFixed(2) + 'vw');
+      }
+    });
+  }
+})();
 </script>
 </body>
 </html>
