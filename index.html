@@ -3,124 +3,169 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>BTC Drop</title>
+<title>BTC Drop – Neon Rain</title>
 <style>
   :root{
     --neon: #00ff9a;
-    --neon-soft: rgba(0,255,170,0.5);
+    --neon-soft: rgba(0,255,170,.55);
+    --bg: #1a1a1a; /* ← background. Try #0b0f0e (almost black) or #101010 for extra pop */
   }
 
+  /* page */
+  html,body{height:100%}
   body{
     margin:0;
-    background:#1a1a1a; /* grey background works best for neon green */
+    background:var(--bg);
     display:grid;
     place-items:center;
-    min-height:100vh;
-    overflow:hidden;
-    font-family: system-ui, sans-serif;
+    overflow:hidden; /* keep drops inside viewport */
+    font-family:system-ui, Inter, Arial, sans-serif;
     color:var(--neon);
   }
 
-  /* container for drops */
-  #drops{
-    position:absolute;
-    inset:0;
-    overflow:hidden;
-    z-index:0;
-  }
+  /* layer order: rain behind, coin, then text */
+  #drops{ position:fixed; inset:0; z-index:0; overflow:hidden; }
 
-  .drop{
-    position:absolute;
-    border-radius:50%;
-    background: radial-gradient(circle at 30% 30%, var(--neon) 0%, rgba(0,255,170,0.4) 60%, transparent 100%);
-    box-shadow:
-      0 0 6px var(--neon),
-      0 0 12px var(--neon-soft),
-      0 0 20px var(--neon-soft);
-    opacity: var(--o, 0.8);
-    width: var(--s, 12px);
-    height: var(--s, 12px);
-    left: var(--x, 50%);
-    top: var(--y, 50%);
-    transform: rotate(var(--rot, 0deg)) scale(var(--sx, 1), var(--sy, 1));
-    transform-origin:center;
-  }
-
-  .drop.smudge{
-    background: radial-gradient(circle at 40% 40%, var(--neon) 0%, rgba(0,255,170,0.25) 70%, transparent 100%);
-    box-shadow:
-      0 0 12px var(--neon),
-      0 0 30px var(--neon-soft),
-      0 0 60px var(--neon-soft);
-    filter:blur(2px);
-    border-radius:42% 58% 55% 45% / 48% 52% 45% 55%;
+  .center{
+    position:relative;
+    z-index:1;
+    text-align:center;
   }
 
   .flow-img{
-    width:min(100%, 500px);
+    width:min(90vw, 520px);
+    height:auto;
     display:block;
-    z-index:1;
-    position:relative;
+    margin:auto;
+    border-radius:20px; /* set 50% if your PNG is a perfect circle */
+    filter:saturate(115%);
   }
 
   h1,p{
-    position:relative;
-    z-index:2;
-    text-align:center;
-    margin:0.5em 0 0;
-    text-shadow:0 0 10px var(--neon), 0 0 20px var(--neon);
+    margin:.6rem 0 0;
+    text-shadow:0 0 10px var(--neon), 0 0 22px var(--neon);
+  }
+  p{ color:#bfffe6 }
+
+  /* ====== Neon drops ====== */
+  .drop{
+    position:absolute; top:-12vh; /* start slightly above the viewport */
+    width:var(--s,12px); height:var(--s,12px);
+    left:var(--x, 50vw);
+    border-radius:50%;
+    opacity:var(--o,.85);
+    background:
+      radial-gradient(circle at 35% 35%, var(--neon) 0%, rgba(0,255,170,.35) 60%, transparent 100%);
+    box-shadow:
+      0 0 6px var(--neon),
+      0 0 14px var(--neon-soft),
+      0 0 28px var(--neon-soft);
+    filter:blur(var(--b,0));
+    animation:
+      fall var(--dur,9s) linear var(--delay,0s) infinite,
+      pulse var(--pdur,2.4s) ease-in-out var(--pdelay,0s) infinite alternate;
+    transform: translateY(0) rotate(var(--rot,0deg)) scale(var(--sx,1), var(--sy,1));
+    will-change: transform, opacity, filter;
+    mix-blend-mode:screen;
+  }
+
+  /* smudgy blobs (bigger, blurrier, more liquid) */
+  .drop.smudge{
+    filter: blur(2px);
+    background:
+      radial-gradient(circle at 40% 40%, var(--neon) 0%, rgba(0,255,170,.25) 75%, transparent 100%);
+    border-radius:42% 58% 55% 45% / 48% 52% 45% 55%;
+    box-shadow:
+      0 0 12px var(--neon),
+      0 0 34px var(--neon-soft),
+      0 0 64px var(--neon-soft);
+  }
+
+  /* falling motion: translateY from above to beyond bottom */
+  @keyframes fall{
+    from { transform: translateY(-12vh) rotate(var(--rot,0deg)) scale(var(--sx,1), var(--sy,1)); }
+    to { transform: translateY(112vh) rotate(var(--rot,0deg)) scale(var(--sx,1), var(--sy,1)); }
+  }
+
+  /* subtle breathing/pulse to feel alive */
+  @keyframes pulse{
+    0% { transform: translateY(var(--ty,0)) rotate(var(--rot,0deg)) scale(calc(var(--sx,1)*0.9), calc(var(--sy,1)*0.9)); opacity: calc(var(--o,.85)*0.85);}
+    100% { transform: translateY(var(--ty,0)) rotate(var(--rot,0deg)) scale(calc(var(--sx,1)*1.15), calc(var(--sy,1)*1.15)); opacity: var(--o,.95); }
   }
 </style>
 </head>
 <body>
 
-  <!-- floating neon drops -->
-  <div id="drops"></div>
+  <!-- Neon rain layer -->
+  <div id="drops" aria-hidden="true"></div>
 
-  <!-- your coin -->
-  <img class="flow-img" src="bitcoin-green-flow.jpg" alt="Glowing Bitcoin">
-
-  <!-- text -->
-  <h1>BTC DROP</h1>
-  <p>The future is flowing in neon green ⚡</p>
+  <!-- Your coin + caption -->
+  <div class="center">
+    <img class="flow-img" src="bitcoin-green-flow.jpg" alt="Glowing Bitcoin">
+    <h1>BTC DROP</h1>
+    <p>The future is flowing in neon green ⚡</p>
+  </div>
 
 <script>
-const dropsEl = document.getElementById("drops");
-const dropCount = 120; // total drops
+/* Neon rain generator: falling + pulsating + slight drift */
+const dropsEl = document.getElementById('drops');
+const COUNT = 140; // number of particles (tune 80–200)
 
-for (let i = 0; i < dropCount; i++) {
-  const d = document.createElement("span");
-  d.className = "drop";
+for (let i = 0; i < COUNT; i++) {
+  const d = document.createElement('span');
+  const isSmudge = Math.random() < 0.22;
+  d.className = 'drop' + (isSmudge ? ' smudge' : '');
 
-  const isSmudge = Math.random() < 0.2;
-  if (isSmudge) d.classList.add("smudge");
+  // Random X across viewport, with tiny side drift by using CSS 'left' + long duration
+  const xvw = (Math.random() * 100).toFixed(2) + 'vw';
+  d.style.setProperty('--x', xvw);
 
-  const minSize = isSmudge ? 30 : 6;
-  const maxSize = isSmudge ? 80 : 20;
-  const size = (Math.random() * (maxSize - minSize) + minSize).toFixed(1) + "px";
+  // Size
+  const min = isSmudge ? 28 : 5;
+  const max = isSmudge ? 76 : 18;
+  const size = (min + Math.random() * (max - min)).toFixed(1) + 'px';
+  d.style.setProperty('--s', size);
 
-  const x = (Math.random() * 100).toFixed(2) + "%";
-  const y = (Math.random() * 100).toFixed(2) + "%";
+  // Opacity
+  const o = (isSmudge ? 0.30 + Math.random()*0.15 : 0.6 + Math.random()*0.35).toFixed(2);
+  d.style.setProperty('--o', o);
 
-  const o = (isSmudge ? 0.28 + Math.random() * 0.12 : 0.6 + Math.random() * 0.4).toFixed(2);
-
-  let sx = 1, sy = 1, rot = "0deg";
+  // Elliptical scale + rotation
+  let sx = 1, sy = 1, rot = 0;
   if (isSmudge) {
-    const wide = Math.random() < 0.65;
-    sx = wide ? (1.2 + Math.random() * 0.9) : (0.8 + Math.random() * 0.4);
-    sy = wide ? (0.7 + Math.random() * 0.4) : (1.2 + Math.random() * 0.9);
-    rot = (Math.random() * 360).toFixed(1) + "deg";
+    const wide = Math.random() < 0.6;
+    sx = wide ? 1.2 + Math.random()*0.8 : 0.8 + Math.random()*0.4;
+    sy = wide ? 0.7 + Math.random()*0.4 : 1.2 + Math.random()*0.8;
+    rot = (Math.random()*360).toFixed(1);
   }
+  d.style.setProperty('--sx', sx);
+  d.style.setProperty('--sy', sy);
+  d.style.setProperty('--rot', rot + 'deg');
 
-  d.style.setProperty("--s", size);
-  d.style.setProperty("--x", x);
-  d.style.setProperty("--y", y);
-  d.style.setProperty("--o", o);
-  d.style.setProperty("--sx", sx);
-  d.style.setProperty("--sy", sy);
-  d.style.setProperty("--rot", rot);
+  // Blur for depth (farther drops blur more)
+  d.style.setProperty('--b', (Math.random() * 1.6).toFixed(2) + 'px');
+
+  // Fall duration + start delay
+  const dur = (7 + Math.random()*10).toFixed(2) + 's';
+  const delay = (-Math.random()*dur.replace('s','')).toFixed(2) + 's'; // negative delay to spread positions
+  d.style.setProperty('--dur', dur);
+  d.style.setProperty('--delay', delay);
+
+  // Pulse timing
+  const pdur = (1.8 + Math.random()*2.4).toFixed(2) + 's';
+  const pdelay = (Math.random()*2).toFixed(2) + 's';
+  d.style.setProperty('--pdur', pdur);
+  d.style.setProperty('--pdelay', pdelay);
 
   dropsEl.appendChild(d);
+
+  // When an animation cycle finishes, randomize X to create subtle drift over time
+  d.addEventListener('animationiteration', (e) => {
+    if (e.animationName === 'fall') {
+      const nx = (Math.random() * 100).toFixed(2) + 'vw';
+      d.style.setProperty('--x', nx);
+    }
+  });
 }
 </script>
 </body>
